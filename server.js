@@ -540,11 +540,12 @@ function reminderInfo(data, u, nowMs) {
   return { daysInactive, lastReminderAt: u.lastReminderAt || null, needsReminder }
 }
 
-/** 提醒邮件模板（text） */
+/** 提醒邮件模板（text）；游戏地址从环境变量 SITE_URL 读取（公开仓库不含真实值），未设置时显示占位文字 */
 function buildReminderMail(u, daysInactive) {
+  const siteUrl = process.env.SITE_URL || '游戏网址'
   return {
     subject: `【方块对照】${u.childName}小朋友今天还没玩小游戏哦`,
-    text: `您好！\n\n${u.childName}小朋友已经 ${daysInactive} 天没有进行小游戏训练了。请抽空打开 http://175.178.16.78:8100/ 登录完成今日练习。\n登录方式：输入编号 ${u.participantId}（两次）和儿童姓氏「${u.childSurname}」。\n\n谢谢配合！\n方块对照实验组`,
+    text: `您好！\n\n${u.childName}小朋友已经 ${daysInactive} 天没有进行小游戏训练了。请抽空打开 ${siteUrl} 登录完成今日练习。\n登录方式：输入编号 ${u.participantId}（两次）和儿童姓氏「${u.childSurname}」。\n\n谢谢配合！\n方块对照实验组`,
   }
 }
 
@@ -732,9 +733,12 @@ async function handleApi(req, res, urlPath) {
   }
 
   // POST /api/admin/login
+  // admin 凭据从环境变量读取（公开仓库不含真实值）；未设置 ADMIN_PASSWORD 时后台登录不可用
+  const ADMIN_USER = process.env.ADMIN_USER || 'admin'
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
   if (method === 'POST' && urlPath === '/api/admin/login') {
     const body = await readJsonBody(req)
-    if (body.username !== 'admin' || body.password !== '123456') {
+    if (!ADMIN_PASSWORD || body.username !== ADMIN_USER || body.password !== ADMIN_PASSWORD) {
       throw httpError(401, '用户名或密码不正确')
     }
     const token = newToken()
